@@ -38,6 +38,14 @@ class AssetFilter extends DispatcherFilter {
 	protected $_priority = 9;
 
 /**
+ * List of asset types that should update their App.x_baseURL path automatically.
+ * This is opt-in, since it will change the way img, css, and js links get created.
+ * 
+ * @var array
+ */
+	protected $_assetTypes = [];
+
+/**
  * Checks if a requested asset exists and sends it to the browser
  *
  * @param \Cake\Event\Event $event containing the request and response object
@@ -48,6 +56,23 @@ class AssetFilter extends DispatcherFilter {
 		$request = $event->data['request'];
 
 		$url = urldecode($request->url);
+
+		if (isset($this->_config['assetTypes'])) {
+			$this->_assetTypes = $this->_config['assetTypes'];
+		}
+
+		if ($this->_config['virtualBaseUrl']) {
+			if (in_array('img', $this->_assetTypes))
+				Configure::write('App.imageBaseUrl', sprintf('/%s/%s', $this->_config['virtualBaseUrl'], Configure::read('App.imageBaseUrl')));
+			if (in_array('css', $this->_assetTypes))
+				Configure::write('App.cssBaseUrl', sprintf('/%s/%s', $this->_config['virtualBaseUrl'], Configure::read('App.cssBaseUrl')));
+			if (in_array('js', $this->_assetTypes))
+				Configure::write('App.jsBaseUrl', sprintf('/%s/%s', $this->_config['virtualBaseUrl'], Configure::read('App.jsBaseUrl')));
+
+			if (strpos($url, $this->_config['virtualBaseUrl']) !== false)
+				$url = preg_replace('/'.$this->_config['virtualBaseUrl'].'\//', '', $url);
+		}
+
 		if (strpos($url, '..') !== false || strpos($url, '.') === false) {
 			return;
 		}
@@ -84,6 +109,9 @@ class AssetFilter extends DispatcherFilter {
 			$fileFragment = implode(DS, $parts);
 			$pluginWebroot = Plugin::path($plugin) . 'webroot' . DS;
 			return $pluginWebroot . $fileFragment;
+		}
+		if (isset($this->_config['virtualBaseUrl'])) {
+			return WWW_ROOT . $url;
 		}
 	}
 
