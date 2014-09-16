@@ -97,7 +97,6 @@ class AssetFilter extends DispatcherFilter {
 				});
 				$plugin = implode(DS, $pluginParts);
 				if ($plugin && Plugin::loaded($plugin)) {
-
 					$fileFragment = implode(DS, $parts);
 					$pluginWebroot = Plugin::path($plugin) . 'webroot' . DS;
 					return $pluginWebroot . $fileFragment;
