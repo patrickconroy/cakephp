@@ -85,6 +85,24 @@ class AssetFilter extends DispatcherFilter {
 			$pluginWebroot = Plugin::path($plugin) . 'webroot' . DS;
 			return $pluginWebroot . $fileFragment;
 		}
+		foreach (['css', 'js', 'img'] as $assetType) {
+			$assetPlace = array_search($assetType, $parts);
+			if (is_int($assetPlace)) {
+				$pluginParts = array_slice($parts, 0, $assetPlace);
+				array_walk($pluginParts, function(&$part) use (&$parts) {
+					if (($key = array_search($part, $parts)) !== false) {
+						unset($parts[$key]);
+					}
+					$part = Inflector::camelize($part);
+				});
+				$plugin = implode(DS, $pluginParts);
+				if ($plugin && Plugin::loaded($plugin)) {
+					$fileFragment = implode(DS, $parts);
+					$pluginWebroot = Plugin::path($plugin) . 'webroot' . DS;
+					return $pluginWebroot . $fileFragment;
+				}
+			}
+		}
 	}
 
 /**
