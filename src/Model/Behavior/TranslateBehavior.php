@@ -327,6 +327,9 @@ class TranslateBehavior extends Behavior {
 				$result[$locale] = $translation;
 			}
 
+			if (empty($result)) {
+				return $row;
+			}
 			$options = ['setter' => false, 'guard' => false];
 			$row->set('_translations', $result, $options);
 			unset($row['_i18n']);
