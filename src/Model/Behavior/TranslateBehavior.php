@@ -65,7 +65,8 @@ class TranslateBehavior extends Behavior {
 		'implementedMethods' => ['locale' => 'locale'],
 		'fields' => [],
 		'translationTable' => 'i18n',
-		'defaultLocale' => ''
+		'defaultLocale' => '',
+		'filterEmpty' => false
 	];
 
 /**
@@ -80,7 +81,7 @@ class TranslateBehavior extends Behavior {
 
 		$this->_table = $table;
 		$config = $this->_config;
-		$this->setupFieldAssociations($config['fields'], $config['translationTable']);
+		$this->setupFieldAssociations($config['fields'], $config['translationTable'], $config['filterEmpty']);
 	}
 
 /**
@@ -94,7 +95,7 @@ class TranslateBehavior extends Behavior {
  * @param string $table the table name to use for storing each field translation
  * @return void
  */
-	public function setupFieldAssociations($fields, $table) {
+	public function setupFieldAssociations($fields, $table, $filterEmpty) {
 		$alias = $this->_table->alias();
 		foreach ($fields as $field) {
 			$name = $this->_table->alias() . '_' . $field . '_translation';
@@ -104,7 +105,7 @@ class TranslateBehavior extends Behavior {
 			$this->_table->hasOne($name, [
 				'targetTable' => $target,
 				'foreignKey' => 'foreign_key',
-				'joinType' => 'LEFT',
+				'joinType' => $filterEmpty ? 'INNER' : 'LEFT',
 				'conditions' => [
 					$name . '.model' => $alias,
 					$name . '.field' => $field,
@@ -262,6 +263,7 @@ class TranslateBehavior extends Behavior {
  * @return \Cake\ORM\Query
  */
 	public function findTranslations(Query $query, array $options) {
+		$this->setupFieldAssociations($this->_config['fields'], $this->_config['translationTable'], isset($options['filterEmpty']) && is_bool($options['filterEmpty']) ? $options['filterEmpty'] : $this->_config['filterEmpty']);
 		$locales = isset($options['locales']) ? $options['locales'] : [];
 		$table = $this->_config['translationTable'];
 		return $query
