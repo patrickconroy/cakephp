@@ -64,7 +64,7 @@ class TranslateBehavior extends Behavior {
 		'implementedFinders' => ['translations' => 'findTranslations'],
 		'implementedMethods' => ['locale' => 'locale'],
 		'fields' => [],
-		'translationTable' => 'i18n',
+		'translationTable' => 'I18n',
 		'defaultLocale' => '',
 		'model' => ''
 	];
@@ -107,27 +107,32 @@ class TranslateBehavior extends Behavior {
  * @return void
  */
 	public function setupFieldAssociations($fields, $table, $model) {
+		$target = TableRegistry::get($table);
+		$targetAlias = $target->alias();
+		$alias = $this->_table->alias();
+
 		foreach ($fields as $field) {
-			$name = $this->_table->alias() . '_' . $field . '_translation';
-			$target = TableRegistry::get($name);
-			$target->table($table);
+			$name = $alias . '_' . $field . '_translation';
 
 			$this->_table->hasOne($name, [
+				'className' => $table,
 				'targetTable' => $target,
 				'foreignKey' => 'foreign_key',
 				'joinType' => 'LEFT',
 				'conditions' => [
-					$name . '.model' => $model,
-					$name . '.field' => $field,
+					$targetAlias . '.model' => $model,
+					$targetAlias . '.field' => $field
 				],
 				'propertyName' => $field . '_translation'
 			]);
 		}
 
-		$this->_table->hasMany($table, [
+		$this->_table->hasMany($targetAlias, [
+			'className' => $table,
+			'targetTable' => $target,
 			'foreignKey' => 'foreign_key',
 			'strategy' => 'subquery',
-			'conditions' => ["$table.model" => $model],
+			'conditions' => ["$targetAlias.model" => $model],
 			'propertyName' => '_i18n',
 			'dependent' => true
 		]);
@@ -179,10 +184,11 @@ class TranslateBehavior extends Behavior {
 			);
 		}
 
-		$query->contain($contain);
-		$query->formatResults(function ($results) use ($locale) {
-			return $this->_rowMapper($results, $locale);
-		}, $query::PREPEND);
+		$query
+			->contain($contain)
+			->formatResults(function ($results) use ($locale) {
+				return $this->_rowMapper($results, $locale);
+			}, $query::PREPEND);
 	}
 
 /**
@@ -293,10 +299,13 @@ class TranslateBehavior extends Behavior {
 	public function findTranslations(Query $query, array $options) {
 		$locales = isset($options['locales']) ? $options['locales'] : [];
 		$table = $this->_config['translationTable'];
+		$target = TableRegistry::get($table);
+		$targetAlias = $target->alias();
+
 		return $query
-			->contain([$table => function ($q) use ($locales, $table) {
+			->contain([$targetAlias => function ($q) use ($locales, $targetAlias) {
 				if ($locales) {
-					$q->where(["$table.locale IN" => $locales]);
+					$q->where(["$targetAlias.locale IN" => $locales]);
 				}
 				return $q;
 			}])
