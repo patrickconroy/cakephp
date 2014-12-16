@@ -113,23 +113,20 @@ class TranslateBehavior extends Behavior {
 
 		foreach ($fields as $field) {
 			$name = $alias . '_' . $field . '_translation';
-
 			$this->_table->hasOne($name, [
 				'className' => $table,
-				'targetTable' => $target,
 				'foreignKey' => 'foreign_key',
 				'joinType' => 'LEFT',
 				'conditions' => [
-					$targetAlias . '.model' => $model,
-					$targetAlias . '.field' => $field
+					$name . '.model' => $model,
+					$name . '.field' => $field
 				],
 				'propertyName' => $field . '_translation'
 			]);
 		}
-
+		
 		$this->_table->hasMany($targetAlias, [
 			'className' => $table,
-			'targetTable' => $target,
 			'foreignKey' => 'foreign_key',
 			'strategy' => 'subquery',
 			'conditions' => ["$targetAlias.model" => $model],
