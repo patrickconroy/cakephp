@@ -66,7 +66,8 @@ class TranslateBehavior extends Behavior {
 		'fields' => [],
 		'translationTable' => 'I18n',
 		'defaultLocale' => '',
-		'model' => ''
+		'model' => null,
+		'strategy' => 'subquery'
 	];
 
 /**
@@ -90,7 +91,8 @@ class TranslateBehavior extends Behavior {
 		$this->setupFieldAssociations(
 			$this->_config['fields'],
 			$this->_config['translationTable'],
-			$this->_config['model'] ? $this->_config['model'] : $this->_table->alias()
+			$this->_config['model'] ?: $this->_table->alias(),
+			$this->_config['strategy']
 		);
 	}
 
@@ -106,7 +108,7 @@ class TranslateBehavior extends Behavior {
  * @param string $model the model field value
  * @return void
  */
-	public function setupFieldAssociations($fields, $table, $model) {
+	public function setupFieldAssociations($fields, $table, $model, $strategy) {
 		$target = TableRegistry::get($table);
 		$targetAlias = $target->alias();
 		$alias = $this->_table->alias();
@@ -128,7 +130,7 @@ class TranslateBehavior extends Behavior {
 		$this->_table->hasMany($targetAlias, [
 			'className' => $table,
 			'foreignKey' => 'foreign_key',
-			'strategy' => 'subquery',
+			'strategy' => $strategy,
 			'conditions' => ["$targetAlias.model" => $model],
 			'propertyName' => '_i18n',
 			'dependent' => true
@@ -360,6 +362,9 @@ class TranslateBehavior extends Behavior {
  */
 	public function groupTranslations($results) {
 		return $results->map(function ($row) {
+			if ($row === null) {
+				return $row;
+			}
 			$translations = (array)$row->get('_i18n');
 			$grouped = new Collection($translations);
 
